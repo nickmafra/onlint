@@ -17,8 +17,9 @@
 
     <modules>
         <module>onlint-core</module>
-        <module>onlint-awt</module>
         <module>onlint-server</module>
+        <module>onlint-client</module>
+        <module>onlint-awt</module>
     </modules>
 
     <dependencies>
