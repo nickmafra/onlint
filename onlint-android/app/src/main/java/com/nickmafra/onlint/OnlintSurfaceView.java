@@ -46,10 +46,12 @@ public class OnlintSurfaceView extends SurfaceView implements SurfaceHolder.Call
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         // stretch
+        int widthUtil = width;
+        int heightUtil = height;
         offsetX = 0;
         offsetY = 0;
-        widthRatio = width / (float) state.getScreenWidth();
-        heightRatio = height / (float) state.getScreenHeight();
+        widthRatio = widthUtil / (float) state.getScreenWidth();
+        heightRatio = heightUtil / (float) state.getScreenHeight();
         screenReady = true;
     }
 
@@ -70,10 +72,11 @@ public class OnlintSurfaceView extends SurfaceView implements SurfaceHolder.Call
     }
 
     private Rect createRect() {
-        return new Rect((int) (offsetX + widthRatio * state.getObjX()),
-                (int) (offsetY + heightRatio * state.getObjY()),
-                (int) (widthRatio * state.getObjWidth()),
-                (int) (heightRatio * state.getObjHeight()));
+        int x = (int) (offsetX + state.getObjX() * widthRatio);
+        int y = (int) (offsetY + state.getObjY() * heightRatio);
+        int width = (int) (state.getObjWidth() * widthRatio);
+        int height = (int) (state.getObjHeight() * heightRatio);
+        return new Rect(x, y, x + width, y + height);
     }
 
     private static Paint createPaint() {
