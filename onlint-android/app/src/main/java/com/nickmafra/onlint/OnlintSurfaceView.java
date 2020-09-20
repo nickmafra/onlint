@@ -8,7 +8,8 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import com.nickmafra.onlint.io.ServerUpdateSender;
+import com.nickmafra.onlint.io.SendUpdateThread;
+import com.nickmafra.onlint.model.UpdateRequest;
 
 public class OnlintSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
 
@@ -16,7 +17,7 @@ public class OnlintSurfaceView extends SurfaceView implements SurfaceHolder.Call
 
     private final OnlineActivity onlineActivity;
     private final RetanguloClientState state;
-    private final ServerUpdateSender updateSender;
+    private final SendUpdateThread updateSender;
 
     private boolean screenReady;
     private int offsetX;
@@ -26,11 +27,11 @@ public class OnlintSurfaceView extends SurfaceView implements SurfaceHolder.Call
 
     private final Paint paint;
 
-    public OnlintSurfaceView(OnlineActivity onlineActivity, RetanguloClientState state, ServerUpdateSender updateSender) {
+    public OnlintSurfaceView(OnlineActivity onlineActivity, RetanguloClientState state, SendUpdateThread updateThread) {
         super(onlineActivity);
         this.onlineActivity = onlineActivity;
         this.state = state;
-        this.updateSender = updateSender;
+        this.updateSender = updateThread;
 
         getHolder().addCallback(this);
         setFocusable(true);
@@ -110,7 +111,8 @@ public class OnlintSurfaceView extends SurfaceView implements SurfaceHolder.Call
 
     private void sendUpdate() {
         try {
-            this.updateSender.sendUpdate();
+            UpdateRequest updateRequest = state.createUpdateRequest();
+            updateSender.addUpdate(updateRequest);
         } catch (Exception e) {
             problemaConexao(e);
         }

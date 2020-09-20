@@ -4,7 +4,7 @@ import com.nickmafra.concurrent.ConcurrentUtils;
 import com.nickmafra.onlint.io.ReadThread;
 import com.nickmafra.onlint.io.ServerReadConnection;
 import com.nickmafra.onlint.io.ServerUpdateConnection;
-import com.nickmafra.onlint.io.ServerUpdateSender;
+import com.nickmafra.onlint.io.SendUpdateThread;
 
 public class ClientMainClass {
 
@@ -18,14 +18,14 @@ public class ClientMainClass {
 
         RetanguloClientState state = new RetanguloClientState();
         ReadThread readThread = new ReadThread(state, readConnection);
-        ServerUpdateSender updateSender = new ServerUpdateSender(state, updateConnection);
-        GraphicRetangulo graphic = new GraphicRetangulo(readThread, updateSender);
+        SendUpdateThread updateThread = new SendUpdateThread(updateConnection);
+        GraphicRetangulo graphic = new GraphicRetangulo(readThread, updateThread);
 
-        updateSender.startConnection();
+        updateThread.start();
         graphic.start();
         readThread.start();
 
-        ConcurrentUtils.stopAllIfSomeoneStops(500, readThread);
+        ConcurrentUtils.stopAllIfSomeoneStops(500, updateThread, readThread);
 
         graphic.close();
     }

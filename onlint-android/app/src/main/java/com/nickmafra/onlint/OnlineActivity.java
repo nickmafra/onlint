@@ -6,7 +6,7 @@ import android.os.Bundle;
 import com.nickmafra.onlint.io.ReadThread;
 import com.nickmafra.onlint.io.ServerReadConnection;
 import com.nickmafra.onlint.io.ServerUpdateConnection;
-import com.nickmafra.onlint.io.ServerUpdateSender;
+import com.nickmafra.onlint.io.SendUpdateThread;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -24,12 +24,12 @@ public class OnlineActivity extends AppCompatActivity {
     private String host;
     private int port;
 
-    private OnlintSurfaceView surfaceView;
-    private SurfaceDrawerThread drawerThread;
-
     private RetanguloClientState state;
     private ReadThread readThread;
-    private ServerUpdateSender updateSender;
+    private SendUpdateThread updateThread;
+
+    private OnlintSurfaceView surfaceView;
+    private SurfaceDrawerThread drawerThread;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,14 +40,17 @@ public class OnlineActivity extends AppCompatActivity {
         host = intent.getStringExtra(EXTRA_HOST);
         port = intent.getIntExtra(EXTRA_PORT, -1);
 
-        startClient();
-        surfaceView = new OnlintSurfaceView(this, state, updateSender);
-        setContentView(surfaceView);
+        createClientThreads();
+        surfaceView = new OnlintSurfaceView(this, state, updateThread);
         drawerThread = new SurfaceDrawerThread(surfaceView);
+
+        setContentView(surfaceView);
+        updateThread.start();
         drawerThread.start();
+        readThread.start();
     }
 
-    private void startClient() {
+    private void createClientThreads() {
         int readPort = port;
         int updatePort = port + 1;
 
@@ -56,10 +59,7 @@ public class OnlineActivity extends AppCompatActivity {
 
         state = new RetanguloClientState();
         readThread = new ReadThread(state, readConnection);
-        updateSender = new ServerUpdateSender(state, updateConnection);
-
-        updateSender.startConnection();
-        readThread.start();
+        updateThread = new SendUpdateThread(updateConnection);
     }
 
     public void voltar(String mensagem) {
