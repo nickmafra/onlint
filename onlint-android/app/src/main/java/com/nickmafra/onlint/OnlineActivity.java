@@ -2,7 +2,11 @@ package com.nickmafra.onlint;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 
+import com.nickmafra.concurrent.LimitedRateThread;
 import com.nickmafra.onlint.io.ReadThread;
 import com.nickmafra.onlint.io.ServerReadConnection;
 import com.nickmafra.onlint.io.ServerUpdateConnection;
@@ -16,11 +20,16 @@ import androidx.appcompat.app.AppCompatActivity;
  */
 public class OnlineActivity extends AppCompatActivity {
 
+    private static final String TAG = "onlint.OnlineActivity";
+
     public static final String EXTRA_HOST = "onlint.OnlineActivity.host";
     public static final String EXTRA_PORT = "onlint.OnlineActivity.port";
 
     private String host;
     private int port;
+
+    private OnlintSurfaceView surfaceView;
+    private SurfaceDrawerThread drawerThread;
 
     private RetanguloClientState state;
     private ReadThread readThread;
@@ -30,16 +39,20 @@ public class OnlineActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.activity_online);
 
         Intent intent = getIntent();
         host = intent.getStringExtra(EXTRA_HOST);
         port = intent.getIntExtra(EXTRA_PORT, -1);
 
-        startClient();
+        if (startClient()) {
+            surfaceView = new OnlintSurfaceView(this, state, updateSender);
+            setContentView(surfaceView);
+            drawerThread = new SurfaceDrawerThread(surfaceView);
+            drawerThread.start();
+        }
     }
 
-    private void startClient() {
+    private boolean startClient() {
         int readPort = port;
         int updatePort = port + 1;
 
@@ -50,7 +63,37 @@ public class OnlineActivity extends AppCompatActivity {
         readThread = new ReadThread(state, readConnection);
         updateSender = new ServerUpdateSender(state, updateConnection);
 
-        updateSender.start();
+        try {
+            updateSender.start();
+        } catch (Exception e) {
+            String message = "Erro ao conectar com o servidor.";
+            Log.e(TAG, message, e);
+            voltar(message);
+            return false;
+        }
         readThread.start();
+        return true;
+    }
+
+    private void voltar(String mensagem) {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra(OnlineActivity.EXTRA_HOST, host);
+        intent.putExtra(OnlineActivity.EXTRA_PORT, port);
+        if (mensagem != null) {
+            intent.putExtra(MainActivity.EXTRA_MENSAGEM, mensagem);
+        }
+        startActivity(intent);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        if (readThread != null) {
+            readThread.interrupt();
+        }
+        if (drawerThread != null) {
+            drawerThread.interrupt();
+        }
     }
 }
