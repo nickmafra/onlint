@@ -21,7 +21,7 @@ public class ClientMainClass {
         ServerUpdateSender updateSender = new ServerUpdateSender(state, updateConnection);
         GraphicRetangulo graphic = new GraphicRetangulo(readThread, updateSender);
 
-        updateSender.start();
+        updateSender.startConnection();
         graphic.start();
         readThread.start();
 

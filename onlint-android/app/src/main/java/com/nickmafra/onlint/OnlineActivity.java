@@ -2,11 +2,7 @@ package com.nickmafra.onlint;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 
-import com.nickmafra.concurrent.LimitedRateThread;
 import com.nickmafra.onlint.io.ReadThread;
 import com.nickmafra.onlint.io.ServerReadConnection;
 import com.nickmafra.onlint.io.ServerUpdateConnection;
@@ -44,15 +40,14 @@ public class OnlineActivity extends AppCompatActivity {
         host = intent.getStringExtra(EXTRA_HOST);
         port = intent.getIntExtra(EXTRA_PORT, -1);
 
-        if (startClient()) {
-            surfaceView = new OnlintSurfaceView(this, state, updateSender);
-            setContentView(surfaceView);
-            drawerThread = new SurfaceDrawerThread(surfaceView);
-            drawerThread.start();
-        }
+        startClient();
+        surfaceView = new OnlintSurfaceView(this, state, updateSender);
+        setContentView(surfaceView);
+        drawerThread = new SurfaceDrawerThread(surfaceView);
+        drawerThread.start();
     }
 
-    private boolean startClient() {
+    private void startClient() {
         int readPort = port;
         int updatePort = port + 1;
 
@@ -63,19 +58,11 @@ public class OnlineActivity extends AppCompatActivity {
         readThread = new ReadThread(state, readConnection);
         updateSender = new ServerUpdateSender(state, updateConnection);
 
-        try {
-            updateSender.start();
-        } catch (Exception e) {
-            String message = "Erro ao conectar com o servidor.";
-            Log.e(TAG, message, e);
-            voltar(message);
-            return false;
-        }
+        updateSender.startConnection();
         readThread.start();
-        return true;
     }
 
-    private void voltar(String mensagem) {
+    public void voltar(String mensagem) {
         Intent intent = new Intent(this, MainActivity.class);
         intent.putExtra(OnlineActivity.EXTRA_HOST, host);
         intent.putExtra(OnlineActivity.EXTRA_PORT, port);

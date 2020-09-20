@@ -45,7 +45,7 @@ public class ReadThread extends LimitedRateThread {
         return new ClientInfo(String.valueOf(RANDOM.nextLong()));
     }
 
-    public void sendReadRequest() {
+    public void sendReadRequest() throws InterruptedException {
         ReadRequest request = new ReadRequest();
         ReadResponse response = readConnection.execute(request);
         state.receiveUpdate(response);

@@ -1,6 +1,5 @@
 package com.nickmafra.onlint;
 
-import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -14,6 +13,8 @@ import com.nickmafra.onlint.io.ServerUpdateSender;
 public class OnlintSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
 
     private static final String TAG = "OnlintSurfaceView";
+
+    private final OnlineActivity onlineActivity;
     private final RetanguloClientState state;
     private final ServerUpdateSender updateSender;
 
@@ -25,8 +26,9 @@ public class OnlintSurfaceView extends SurfaceView implements SurfaceHolder.Call
 
     private final Paint paint;
 
-    public OnlintSurfaceView(Context context, RetanguloClientState state, ServerUpdateSender updateSender) {
-        super(context);
+    public OnlintSurfaceView(OnlineActivity onlineActivity, RetanguloClientState state, ServerUpdateSender updateSender) {
+        super(onlineActivity);
+        this.onlineActivity = onlineActivity;
         this.state = state;
         this.updateSender = updateSender;
 
@@ -89,19 +91,34 @@ public class OnlintSurfaceView extends SurfaceView implements SurfaceHolder.Call
             Log.d(TAG, "Pressed at " + x + ", " +  y);
 
             if (state.pegaObjeto(x, y)) {
-                this.updateSender.sendUpdate();
+                sendUpdate();
             }
 
             return true;
         } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
             if (state.arrastaObjeto(x, y)) {
-                this.updateSender.sendUpdate();
+                sendUpdate();
             }
             return true;
         } else if (event.getAction() == MotionEvent.ACTION_UP) {
             state.soltaObjeto();
+            sendUpdate();
             return true;
         }
         return false;
+    }
+
+    private void sendUpdate() {
+        try {
+            this.updateSender.sendUpdate();
+        } catch (Exception e) {
+            problemaConexao(e);
+        }
+    }
+
+    private void problemaConexao(Exception e) {
+        String message = "Erro na conexão com o servidor.";
+        Log.e(TAG, message, e);
+        onlineActivity.voltar(message);
     }
 }

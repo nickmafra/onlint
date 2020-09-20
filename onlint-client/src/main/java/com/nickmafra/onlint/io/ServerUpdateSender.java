@@ -17,12 +17,17 @@ public class ServerUpdateSender {
         this.updateConnection = updateConnection;
     }
 
-    public void start() {
+    public void startConnection() {
         if (clientInfo != null) {
             throw new IllegalStateException("Já iniciado.");
         }
         clientInfo = generateClientInfo();
-        updateConnection.start(clientInfo);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                updateConnection.start(clientInfo);
+            }
+        }, "StartUpdateConnection").start();
     }
 
     private static final Random RANDOM = new Random();
@@ -31,7 +36,7 @@ public class ServerUpdateSender {
         return new ClientInfo(String.valueOf(RANDOM.nextLong()));
     }
 
-    public void sendUpdate() {
+    public void sendUpdate() throws InterruptedException {
         UpdateRequest updateRequest = state.createUpdateRequest();
         updateConnection.execute(updateRequest);
     }

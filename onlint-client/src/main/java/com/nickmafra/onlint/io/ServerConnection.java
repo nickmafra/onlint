@@ -2,7 +2,6 @@ package com.nickmafra.onlint.io;
 
 import com.nickmafra.concurrent.PrintStreamScanner;
 import com.nickmafra.onlint.exception.OnlintRuntimeException;
-import com.nickmafra.onlint.io.EnvelopePss;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -18,6 +17,9 @@ public class ServerConnection<I, R1, R2> {
     private Socket socket;
     private EnvelopePss envelopePss;
 
+    private final Object lockConnection = new Object();
+    private volatile boolean connectionError;
+
     public ServerConnection(Class<R2> responseClass, String host, int port) {
 
         this.responseClass = responseClass;
@@ -27,12 +29,17 @@ public class ServerConnection<I, R1, R2> {
 
     public void start(I clientInfo) {
         log.info("Estabelecendo conexão com servidor...");
-        try {
-            socket = new Socket(host, port);
-            envelopePss = new EnvelopePss(new PrintStreamScanner(socket));
-        } catch (IOException e) {
-            closeConnection();
-            throw new OnlintRuntimeException("Erro ao estabelecer conexão com servidor.", e);
+        synchronized (lockConnection) {
+            try {
+                socket = new Socket(host, port);
+                envelopePss = new EnvelopePss(new PrintStreamScanner(socket));
+            } catch (IOException e) {
+                connectionError = true;
+                closeConnection();
+                throw new OnlintRuntimeException("Erro ao estabelecer conexão com servidor.", e);
+            } finally {
+                lockConnection.notifyAll();
+            }
         }
         sendInfo(clientInfo);
     }
@@ -41,10 +48,23 @@ public class ServerConnection<I, R1, R2> {
         return socket != null;
     }
 
-    public R2 execute(R1 request) {
-        if (!started()) {
-            throw new IllegalStateException("Não iniciado.");
+    private void checkConnectionError() {
+        if (connectionError) {
+            throw new IllegalStateException("Houve erro ao conectar com o servidor.");
         }
+    }
+
+    public void waitStart() throws InterruptedException {
+        synchronized (lockConnection) {
+            while (!started()) {
+                checkConnectionError();
+                lockConnection.wait();
+            }
+        }
+    }
+
+    public R2 execute(R1 request) throws InterruptedException {
+        waitStart();
         writeType(request);
         return readResponse();
     }

@@ -4,7 +4,6 @@ import com.nickmafra.gfx.MouseActionListenerAdapter;
 import com.nickmafra.gfx.SimpleGraphic;
 import com.nickmafra.onlint.io.ReadThread;
 import com.nickmafra.onlint.io.ServerUpdateSender;
-import com.nickmafra.util.MathUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.awt.*;
@@ -24,7 +23,7 @@ public class GraphicRetangulo extends SimpleGraphic {
         this.state = readThread.getClientState();
 
         setDrawer(this::draw);
-        addMouseActionListener(new GraphicRetangulo.MouseActionListenerImpl(state, updateSender));
+        addMouseActionListener(new GraphicRetangulo.MouseActionListenerImpl(this, state, updateSender));
         addOnClosingListener(e -> readThread.interrupt());
     }
 
@@ -39,10 +38,12 @@ public class GraphicRetangulo extends SimpleGraphic {
 
     public static class MouseActionListenerImpl extends MouseActionListenerAdapter {
 
+        private final GraphicRetangulo graphicRetangulo;
         private final RetanguloClientState state;
         private final ServerUpdateSender updateSender;
 
-        public MouseActionListenerImpl(RetanguloClientState state, ServerUpdateSender updateSender) {
+        public MouseActionListenerImpl(GraphicRetangulo graphicRetangulo, RetanguloClientState state, ServerUpdateSender updateSender) {
+            this.graphicRetangulo = graphicRetangulo;
             this.state = state;
             this.updateSender = updateSender;
         }
@@ -54,7 +55,12 @@ public class GraphicRetangulo extends SimpleGraphic {
             log.debug("Pressed at {}, {}", x, y);
 
             if (state.pegaObjeto(x, y)) {
-                this.updateSender.sendUpdate();
+                try {
+                    this.updateSender.sendUpdate();
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                    graphicRetangulo.close();
+                }
             }
         }
 
@@ -64,7 +70,12 @@ public class GraphicRetangulo extends SimpleGraphic {
             int y = e.getY();
 
             if (state.arrastaObjeto(x, y)) {
-                this.updateSender.sendUpdate();
+                try {
+                    this.updateSender.sendUpdate();
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                    graphicRetangulo.close();
+                }
             }
         }
 
