@@ -1,5 +1,6 @@
 package com.nickmafra.onlint.io;
 
+import com.nickmafra.exception.CheckedRunnable;
 import com.nickmafra.onlint.RetanguloClientState;
 import com.nickmafra.onlint.model.ClientInfo;
 import com.nickmafra.onlint.model.ReadRequest;
@@ -20,7 +21,12 @@ public class ReadThread extends LimitedRateThread {
         this.state = state;
         this.readConnection = readConnection;
 
-        setRunnable(this::sendReadRequest);
+        setRunnable(new CheckedRunnable<InterruptedException>() {
+            @Override
+            public void run() throws InterruptedException {
+                ReadThread.this.sendReadRequest();
+            }
+        });
     }
 
     public RetanguloClientState getClientState() {
