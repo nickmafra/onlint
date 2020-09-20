@@ -36,6 +36,7 @@
         android:layout_marginTop="8dp"
         android:ems="10"
         android:hint="Port"
+        android:text="8029"
         android:inputType="number"
         app:layout_constraintEnd_toEndOf="@+id/hostEditText"
         app:layout_constraintStart_toStartOf="@+id/hostEditText"

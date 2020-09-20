@@ -23,6 +23,9 @@ public class SurfaceDrawerThread extends LimitedRateThread {
         public void run() {
             Canvas canvas = null;
             try {
+                if (surfaceView.getHolder().isCreating()) {
+                    return;
+                }
                 canvas = surfaceView.getHolder().lockCanvas();
                 synchronized (canvas) {
                     surfaceView.draw(canvas);
