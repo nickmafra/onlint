@@ -2,22 +2,21 @@ package com.nickmafra.onlint;
 
 import com.nickmafra.onlint.model.ReadResponse;
 import com.nickmafra.onlint.model.UpdateRequest;
+import com.nickmafra.util.MathUtil;
 import lombok.Data;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-import static com.nickmafra.onlint.StateConstants.INITIAL_X;
-import static com.nickmafra.onlint.StateConstants.INITIAL_Y;
+import static com.nickmafra.onlint.StateConstants.*;
 
-@Data
+@Getter
 @RequiredArgsConstructor
 public class RetanguloClientState {
 
-    private String clientId;
-
-    private volatile int screenWidth = 800;
-    private volatile int screenHeight = 600;
-    private volatile int objWidth = StateConstants.OBJ_WIDTH;
-    private volatile int objHeight = StateConstants.OBJ_HEIGHT;
+    private volatile int screenWidth = SCREEN_WIDTH;
+    private volatile int screenHeight = SCREEN_HEIGHT;
+    private volatile int objWidth = OBJ_WIDTH;
+    private volatile int objHeight = OBJ_HEIGHT;
 
     private volatile int objX = INITIAL_X;
     private volatile int objY = INITIAL_Y;
@@ -27,6 +26,33 @@ public class RetanguloClientState {
     public synchronized void receiveUpdate(ReadResponse readResponse) {
         objX = readResponse.getX();
         objY = readResponse.getY();
+    }
+
+    private volatile int objRelativeX;
+    private volatile int objRelativeY;
+
+    public boolean isOverObj(int x, int y) {
+        return objX < x && x < objX + objWidth
+                && objY < y && y < objY + objHeight;
+    }
+
+    public synchronized boolean pegaObjeto(int x, int y) {
+        objRelativeX = objX - x;
+        objRelativeY = objY - y;
+        arrastando = isOverObj(x, y);
+        return arrastando;
+    }
+
+    public synchronized boolean arrastaObjeto(int x, int y) {
+        if (arrastando) {
+            objX = MathUtil.limitRange(x + objRelativeX, 0, screenWidth - objWidth);
+            objY = MathUtil.limitRange(y + objRelativeY, 0, screenHeight - objHeight);
+        }
+        return arrastando;
+    }
+
+    public synchronized void soltaObjeto() {
+        arrastando = false;
     }
 
     public synchronized UpdateRequest createUpdateRequest() {

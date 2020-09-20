@@ -42,9 +42,6 @@ public class GraphicRetangulo extends SimpleGraphic {
         private final RetanguloClientState state;
         private final ServerUpdateSender updateSender;
 
-        private volatile int objRelativeX;
-        private volatile int objRelativeY;
-
         public MouseActionListenerImpl(RetanguloClientState state, ServerUpdateSender updateSender) {
             this.state = state;
             this.updateSender = updateSender;
@@ -56,19 +53,9 @@ public class GraphicRetangulo extends SimpleGraphic {
             int y = e.getY();
             log.debug("Pressed at {}, {}", x, y);
 
-            if (mouseIsOverObj(x, y)) {
-                synchronized (state) {
-                    objRelativeX = state.getObjX() - x;
-                    objRelativeY = state.getObjY() - y;
-                    state.setArrastando(true);
-                }
+            if (state.pegaObjeto(x, y)) {
                 this.updateSender.sendUpdate();
             }
-        }
-
-        private boolean mouseIsOverObj(int x, int y) {
-            return state.getObjX() < x && x < state.getObjX() + state.getObjWidth()
-                    && state.getObjY() < y && y < state.getObjY() + state.getObjHeight();
         }
 
         @Override
@@ -76,18 +63,14 @@ public class GraphicRetangulo extends SimpleGraphic {
             int x = e.getX();
             int y = e.getY();
 
-            if (state.isArrastando()) {
-                state.setObjX(MathUtil.limitRange(x + objRelativeX, 0, state.getScreenWidth() - state.getObjWidth()));
-                state.setObjY(MathUtil.limitRange(y + objRelativeY, 0, state.getScreenHeight() - state.getObjHeight()));
+            if (state.arrastaObjeto(x, y)) {
                 this.updateSender.sendUpdate();
             }
         }
 
         @Override
         public void mouseReleased(MouseEvent e) {
-            synchronized (state) {
-                state.setArrastando(false);
-            }
+            state.soltaObjeto();
         }
     }
 }

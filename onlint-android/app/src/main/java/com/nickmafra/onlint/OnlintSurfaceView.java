@@ -9,9 +9,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-
 import com.nickmafra.onlint.io.ServerUpdateSender;
-import com.nickmafra.util.MathUtil;
 
 public class OnlintSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
 
@@ -82,9 +80,6 @@ public class OnlintSurfaceView extends SurfaceView implements SurfaceHolder.Call
         return paint;
     }
 
-    private volatile int objRelativeX;
-    private volatile int objRelativeY;
-
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         int x = (int) ((event.getX() - offsetX) / widthRatio);
@@ -93,32 +88,20 @@ public class OnlintSurfaceView extends SurfaceView implements SurfaceHolder.Call
 
             Log.d(TAG, "Pressed at " + x + ", " +  y);
 
-            if (touchIsOverObj(x, y)) {
-                synchronized (state) {
-                    objRelativeX = state.getObjX() - x;
-                    objRelativeY = state.getObjY() - y;
-                    state.setArrastando(true);
-                }
+            if (state.pegaObjeto(x, y)) {
                 this.updateSender.sendUpdate();
             }
 
             return true;
         } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
-            if (state.isArrastando()) {
-                state.setObjX(MathUtil.limitRange(x + objRelativeX, 0, state.getScreenWidth() - state.getObjWidth()));
-                state.setObjY(MathUtil.limitRange(y + objRelativeY, 0, state.getScreenHeight() - state.getObjHeight()));
+            if (state.arrastaObjeto(x, y)) {
                 this.updateSender.sendUpdate();
             }
             return true;
         } else if (event.getAction() == MotionEvent.ACTION_UP) {
-            state.setArrastando(false);
+            state.soltaObjeto();
             return true;
         }
         return false;
-    }
-
-    private boolean touchIsOverObj(int x, int y) {
-        return state.getObjX() < x && x < state.getObjX() + state.getObjWidth()
-                && state.getObjY() < y && y < state.getObjY() + state.getObjHeight();
     }
 }
