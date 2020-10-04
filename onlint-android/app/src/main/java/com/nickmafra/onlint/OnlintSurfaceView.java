@@ -4,12 +4,15 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import com.nickmafra.onlint.io.OnlintClientThread;
 import com.nickmafra.onlint.io.UpdateSender;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 public class OnlintSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
 
@@ -18,6 +21,8 @@ public class OnlintSurfaceView extends SurfaceView implements SurfaceHolder.Call
     private final OnlineActivity onlineActivity;
     private final RetanguloClientState state;
     private final UpdateSender updateSender;
+
+    private final AtomicReference<SurfaceDrawerThread> drawerThread = new AtomicReference<>();
 
     private boolean screenReady;
     private int offsetX;
@@ -37,6 +42,10 @@ public class OnlintSurfaceView extends SurfaceView implements SurfaceHolder.Call
         setFocusable(true);
 
         paint = createPaint();
+    }
+
+    public void setDrawerThread(SurfaceDrawerThread drawerThread) {
+        this.drawerThread.set(drawerThread);
     }
 
     @Override
@@ -86,10 +95,13 @@ public class OnlintSurfaceView extends SurfaceView implements SurfaceHolder.Call
         return paint;
     }
 
+    private long timeLastActionSent;
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         int x = (int) ((event.getX() - offsetX) / widthRatio);
         int y = (int) ((event.getY() - offsetY) / heightRatio);
+
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
 
             Log.d(TAG, "Pressed at " + x + ", " +  y);
@@ -100,7 +112,7 @@ public class OnlintSurfaceView extends SurfaceView implements SurfaceHolder.Call
 
             return true;
         } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
-            if (state.arrastaObjeto(x, y)) {
+            if (state.arrastaObjeto(x, y) && checkSendInterval()) {
                 sendUpdate();
             }
             return true;
@@ -112,9 +124,18 @@ public class OnlintSurfaceView extends SurfaceView implements SurfaceHolder.Call
         return false;
     }
 
+    private boolean checkSendInterval() {
+        return SystemClock.currentThreadTimeMillis() - timeLastActionSent > 15;
+    }
+
     private void sendUpdate() {
         try {
             updateSender.sendUpdate();
+            timeLastActionSent = SystemClock.currentThreadTimeMillis();
+            synchronized (drawerThread) {
+                if (drawerThread.get() != null)
+                    drawerThread.notifyAll();
+            }
         } catch (Exception e) {
             problemaConexao(e);
         }

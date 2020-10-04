@@ -37,12 +37,15 @@ public class OnlineActivity extends AppCompatActivity {
         surfaceView = new OnlintSurfaceView(this, clientThread);
         drawerThread = new SurfaceDrawerThread(surfaceView);
 
+        surfaceView.setDrawerThread(drawerThread);
         setContentView(surfaceView);
+
         clientThread.start();
         drawerThread.start();
     }
 
     public void voltar(String mensagem) {
+        interruptThreads();
         Intent intent = new Intent(this, MainActivity.class);
         intent.putExtra(OnlineActivity.EXTRA_HOST, host);
         intent.putExtra(OnlineActivity.EXTRA_PORT, port);
@@ -67,8 +70,11 @@ public class OnlineActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        interruptThreads();
         super.onDestroy();
+    }
 
+    public void interruptThreads() {
         if (clientThread != null) {
             clientThread.interrupt();
         }

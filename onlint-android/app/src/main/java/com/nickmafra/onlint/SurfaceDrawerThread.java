@@ -8,7 +8,8 @@ import com.nickmafra.exception.CheckedRunnable;
 
 public class SurfaceDrawerThread extends LimitedRateThread {
 
-    private static final int PERIOD = 16;
+    private static final int PERIOD = 20;
+    private static final int WAIT_PERIOD = 10;
 
     private final SurfaceView surfaceView;
 
@@ -29,6 +30,9 @@ public class SurfaceDrawerThread extends LimitedRateThread {
                 canvas = surfaceView.getHolder().lockCanvas();
                 synchronized (canvas) {
                     surfaceView.draw(canvas);
+                }
+                synchronized (this) {
+                    wait(WAIT_PERIOD);
                 }
             } catch (Exception e) {
                 // do nothing
