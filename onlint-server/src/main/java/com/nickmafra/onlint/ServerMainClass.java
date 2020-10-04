@@ -13,6 +13,7 @@ public class ServerMainClass {
     public static final int UPDATE_PORT = 8030;
 
     public static void main(String[] args) throws InterruptedException {
+        log.info("Iniciando servidor.");
         RetanguloState state = new RetanguloState();
         ReadCcc readCcc = new ReadCcc(state, READ_PORT);
         ServerUpdateThread serverUpdateThread =  new ServerUpdateThread(state);

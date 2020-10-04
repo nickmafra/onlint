@@ -2,18 +2,20 @@ package com.nickmafra.onlint;
 
 import com.nickmafra.onlint.model.*;
 import com.nickmafra.util.MathUtil;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.nickmafra.onlint.StateConstants.*;
 
+@Slf4j
 public class RetanguloState {
 
     public static final float GRAVITY = 0.5F;
     public static final float MAX_VELOCITY = 50;
 
-    public static final int ARRASTANDO_TIMEOUT = 100;
+    public static final int ARRASTANDO_TIMEOUT = 2000;
 
     private volatile int x = INITIAL_X;
     private volatile int y = INITIAL_Y;
@@ -39,10 +41,12 @@ public class RetanguloState {
     }
 
     public synchronized ReadResponse read(ClientInfo clientInfo, ReadRequest request) {
+        log.debug("Client lendo: {}", clientInfo.getClientId());
         return new ReadResponse(x, y, clientEstaArrastando(clientInfo));
     }
 
     public synchronized UpdateResponse updateByClient(ClientInfo clientInfo, UpdateRequest request) {
+        log.debug("Client atualizando: {}", clientInfo.getClientId());
         updateArrastandoByClient(clientInfo, request.isArrastando());
         if (!clientEstaArrastando(clientInfo)) {
             return new UpdateResponse(false);

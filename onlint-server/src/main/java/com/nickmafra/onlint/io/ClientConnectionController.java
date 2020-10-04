@@ -52,7 +52,7 @@ public class ClientConnectionController<R1, R2> extends Thread {
     public void run() {
         try {
             serverSocket = new ServerSocket(port);
-            log.info("Escutando porta: {}", port);
+            log.debug("Escutando porta: {}", port);
         } catch (IOException e) {
             throw new OnlintRuntimeException("Erro ao escutar porta " + port);
         }
