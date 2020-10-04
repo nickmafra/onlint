@@ -2,11 +2,12 @@ package com.nickmafra.onlint.io;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nickmafra.onlint.model.Envelope;
 import com.nickmafra.concurrent.PrintStreamScanner;
 import com.nickmafra.onlint.exception.OnlintClientException;
 import com.nickmafra.onlint.exception.OnlintRuntimeException;
+import com.nickmafra.onlint.model.Envelope;
 
+import java.io.IOException;
 import java.util.NoSuchElementException;
 
 public class EnvelopePss {
@@ -29,7 +30,7 @@ public class EnvelopePss {
         Envelope envelope;
         try {
             envelope = objectMapper.readValue(json, Envelope.class);
-        } catch (JsonProcessingException e) {
+        } catch (IOException e) {
             throw new OnlintClientException("Não foi possível ler/converter envelope recebido.", e);
         }
         if (envelope == null || envelope.getVal() == null) {

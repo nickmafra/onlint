@@ -4,11 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class EnvelopeParser {
 
-    public static final int ENVELOPE_MAX_SIZE = 2048;
+    private EnvelopeParser() {}
 
     public static ObjectMapper createObjectMapper() {
         ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.activateDefaultTypingAsProperty(null, ObjectMapper.DefaultTyping.JAVA_LANG_OBJECT, "@type");
+        objectMapper.enableDefaultTypingAsProperty(ObjectMapper.DefaultTyping.JAVA_LANG_OBJECT, "@type");
         return objectMapper;
     }
 }
