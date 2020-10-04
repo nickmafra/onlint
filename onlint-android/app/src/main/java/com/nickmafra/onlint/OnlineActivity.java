@@ -2,18 +2,11 @@ package com.nickmafra.onlint;
 
 import android.content.Intent;
 import android.os.Bundle;
-
-import com.nickmafra.onlint.io.ReadThread;
-import com.nickmafra.onlint.io.ServerReadConnection;
-import com.nickmafra.onlint.io.ServerUpdateConnection;
-import com.nickmafra.onlint.io.SendUpdateThread;
-
+import android.util.Log;
 import androidx.appcompat.app.AppCompatActivity;
+import com.nickmafra.onlint.exception.ExceptionConsumer;
+import com.nickmafra.onlint.io.OnlintClientThread;
 
-/**
- * An example full-screen activity that shows and hides the system UI (i.e.
- * status bar and navigation/system bar) with user interaction.
- */
 public class OnlineActivity extends AppCompatActivity {
 
     private static final String TAG = "onlint.OnlineActivity";
@@ -24,9 +17,7 @@ public class OnlineActivity extends AppCompatActivity {
     private String host;
     private int port;
 
-    private RetanguloClientState state;
-    private ReadThread readThread;
-    private SendUpdateThread updateThread;
+    private OnlintClientThread clientThread;
 
     private OnlintSurfaceView surfaceView;
     private SurfaceDrawerThread drawerThread;
@@ -40,26 +31,15 @@ public class OnlineActivity extends AppCompatActivity {
         host = intent.getStringExtra(EXTRA_HOST);
         port = intent.getIntExtra(EXTRA_PORT, -1);
 
-        createClientThreads();
-        surfaceView = new OnlintSurfaceView(this, state, updateThread);
+        clientThread = new OnlintClientThread(host, port, port + 1);
+        clientThread.setOnStop(new VoltarExceptionConsumer());
+
+        surfaceView = new OnlintSurfaceView(this, clientThread);
         drawerThread = new SurfaceDrawerThread(surfaceView);
 
         setContentView(surfaceView);
-        updateThread.start();
+        clientThread.start();
         drawerThread.start();
-        readThread.start();
-    }
-
-    private void createClientThreads() {
-        int readPort = port;
-        int updatePort = port + 1;
-
-        ServerReadConnection readConnection = new ServerReadConnection(host, readPort);
-        ServerUpdateConnection updateConnection = new ServerUpdateConnection(host, updatePort);
-
-        state = new RetanguloClientState();
-        readThread = new ReadThread(state, readConnection);
-        updateThread = new SendUpdateThread(updateConnection);
     }
 
     public void voltar(String mensagem) {
@@ -72,12 +52,25 @@ public class OnlineActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+    public void voltar(Exception e) {
+        Log.e(TAG, "voltar: Erro na OnlintClientThread", e);
+        voltar(e == null ? "Erro desconhecido" : e.getMessage());
+    }
+
+    private class VoltarExceptionConsumer implements ExceptionConsumer {
+
+        @Override
+        public void consumes(Exception e) {
+            voltar(e);
+        }
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
 
-        if (readThread != null) {
-            readThread.interrupt();
+        if (clientThread != null) {
+            clientThread.interrupt();
         }
         if (drawerThread != null) {
             drawerThread.interrupt();

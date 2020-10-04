@@ -2,9 +2,8 @@ package com.nickmafra.onlint;
 
 import com.nickmafra.gfx.MouseActionListenerAdapter;
 import com.nickmafra.gfx.SimpleGraphic;
-import com.nickmafra.onlint.io.ReadThread;
-import com.nickmafra.onlint.io.SendUpdateThread;
-import com.nickmafra.onlint.model.UpdateRequest;
+import com.nickmafra.onlint.io.OnlintClientThread;
+import com.nickmafra.onlint.io.UpdateSender;
 import lombok.extern.slf4j.Slf4j;
 
 import java.awt.*;
@@ -19,13 +18,13 @@ public class GraphicRetangulo extends SimpleGraphic {
 
     private final RetanguloClientState state;
 
-    public GraphicRetangulo(ReadThread readThread, SendUpdateThread updateSender) {
+    public GraphicRetangulo(OnlintClientThread client) {
         super("GraphicRetangulo", WIDTH, HEIGHT, FPS);
-        this.state = readThread.getClientState();
+        this.state = client.getClientState();
 
         setDrawer(this::draw);
-        addMouseActionListener(new GraphicRetangulo.MouseActionListenerImpl(this, state, updateSender));
-        addOnClosingListener(e -> readThread.interrupt());
+        addMouseActionListener(new GraphicRetangulo.MouseActionListenerImpl(state, client.getUpdateSender()));
+        addOnClosingListener(e -> client.interrupt());
     }
 
     private void draw(Graphics2D g) {
@@ -39,12 +38,10 @@ public class GraphicRetangulo extends SimpleGraphic {
 
     public static class MouseActionListenerImpl extends MouseActionListenerAdapter {
 
-        private final GraphicRetangulo graphicRetangulo;
         private final RetanguloClientState state;
-        private final SendUpdateThread updateSender;
+        private final UpdateSender updateSender;
 
-        public MouseActionListenerImpl(GraphicRetangulo graphicRetangulo, RetanguloClientState state, SendUpdateThread updateSender) {
-            this.graphicRetangulo = graphicRetangulo;
+        public MouseActionListenerImpl(RetanguloClientState state, UpdateSender updateSender) {
             this.state = state;
             this.updateSender = updateSender;
         }
@@ -56,7 +53,7 @@ public class GraphicRetangulo extends SimpleGraphic {
             log.debug("Pressed at {}, {}", x, y);
 
             if (state.pegaObjeto(x, y)) {
-                sendUpdate();
+                updateSender.sendUpdate();
             }
         }
 
@@ -66,19 +63,14 @@ public class GraphicRetangulo extends SimpleGraphic {
             int y = e.getY();
 
             if (state.arrastaObjeto(x, y)) {
-                sendUpdate();
+                updateSender.sendUpdate();
             }
         }
 
         @Override
         public void mouseReleased(MouseEvent e) {
             state.soltaObjeto();
-            sendUpdate();
-        }
-
-        private void sendUpdate() {
-            UpdateRequest updateRequest = state.createUpdateRequest();
-            updateSender.addUpdate(updateRequest);
+            updateSender.sendUpdate();
         }
     }
 }
